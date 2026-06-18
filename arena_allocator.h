@@ -68,6 +68,20 @@ public:
 
     void deallocate(T* p, std::size_t n) noexcept {} //deallocate actually does nothing, since the arena resource owns the memory and delets it upon destruction. No memberwise free
     
+    template <typename U>
+    bool operator==(const ArenaAllocator<U>& other) const noexcept {
+        return resource_ == other.resource();
+    }
+
+    template <typename U>
+    bool operator!=(const ArenaAllocator<U>& other) const noexcept {
+        return resource_ != other.resource();
+    }
+
+    template <typename U>
+    struct rebind {
+        using other = ArenaAllocator<U>;
+    };
 
 
 
