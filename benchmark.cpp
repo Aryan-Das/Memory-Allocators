@@ -40,3 +40,33 @@ long long benchmark_pool(std::size_t frames, std::size_t particles_per_frame){
     auto end = std::chrono::steady_clock::now();
     return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 }
+
+long long benchmark_arena(std::size_t frames, std::size_t particles_per_frame){
+    ArenaResource arena(particles_per_frame * sizeof(Particle) + 1024);    
+    auto start = std::chrono::steady_clock::now();
+    for(int frame = 0; frame < frames; ++frame){
+        arena.reset();
+        std::vector<Particle*> particles;
+        particles.reserve(particles_per_frame);
+
+        for(int i = 0; i < particles_per_frame; ++i){
+            auto* mem = arena.allocate(sizeof(Particle), alignof(Particle));
+            auto* p = new (mem) Particle{i, frame, 1, -1, }; 
+            particles.push_back(p);
+
+        }
+        for(Particle*& p : particles){
+            p->x += p->vx;
+            p->y += p-> vy;
+            sink += p->x;
+        }
+        
+        
+    }
+    auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+
+}
+
+
+
