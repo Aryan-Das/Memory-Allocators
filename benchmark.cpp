@@ -67,6 +67,58 @@ long long benchmark_arena(std::size_t frames, std::size_t particles_per_frame){
     return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
 
 }
+long long benchmark_new_delete(std::size_t frames, std::size_t particles_per_frame){
+    auto start = std::chrono::steady_clock::now();
+    for(int frame = 0; frame < frames; ++frame){
+        std::vector<Particle*> particles;
+        particles.reserve(particles_per_frame);
+
+        for(int i = 0; i < particles_per_frame; ++i){
+            auto* p = new Particle{i, frame, 1, -1, }; 
+            particles.push_back(p);
+
+        }
+        for(Particle*& p : particles){
+            p->x += p->vx;
+            p->y += p-> vy;
+            sink += p->x;
+        }
+        for(Particle*& p : particles){
+            delete p;
+        }
+    }
+    auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+}
 
 
 
+int main(){
+    constexpr std::size_t frames = 1000;
+    constexpr std::size_t particles_per_frame = 500;
+    constexpr int runs = 5;
+
+    long long total_new = 0, total_pool = 0, total_arena = 0;
+
+    for(int i = 0; i < runs; ++i){
+        total_new += benchmark_new_delete(frames, particles_per_frame);
+        total_pool += benchmark_pool(frames, particles_per_frame);
+        total_arena += benchmark_arena(frames, particles_per_frame);
+    }
+
+    long long avg_new = total_new / runs;
+    long long avg_pool = total_pool / runs;
+    long long avg_arena = total_arena / runs;
+
+    double pool_speedup = static_cast<double>(avg_new) / static_cast<double>(avg_pool);
+    double arena_speedup = static_cast<double>(avg_new) / static_cast<double>(avg_arena);
+
+    std::cout << "Average New and Delete Time: " << avg_new << std::endl;
+    std::cout << "Average Arena Allocator Time: " << avg_arena << std::endl;
+    std::cout << "Average Pool Allocator Time: " << avg_pool << std::endl;
+
+    std::cout << "Pool Speed Increase: " << pool_speedup << std::endl;
+    std::cout << "Arena Speed Increase: " << arena_speedup << std::endl;
+
+    return 0;
+}
